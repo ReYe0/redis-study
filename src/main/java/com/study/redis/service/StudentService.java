@@ -51,7 +51,7 @@ public class StudentService {
             return Result.fail("验证码错误");
         }
         //一致，根据手机号查询用户
-        Student stu = StudentList.contains(phone);
+        Student stu = StudentList.findByPhone(phone);
         //5.判断用户是否存在
         if(stu == null){
             //不存在，则创建

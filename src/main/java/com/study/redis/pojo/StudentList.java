@@ -43,7 +43,7 @@ public class StudentList {
         }
     }
 
-    public static Student contains(String phone) {
+    public static Student findByPhone(String phone) {
         if(head == null) {
             System.out.println("链表为空！");
             return new Student(9999l,"没找到","没找到","没找到","没找到");
