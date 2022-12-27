@@ -25,8 +25,8 @@ public class MvcConfig implements WebMvcConfigurer {
                         "/blog/hot",
                         "/student/code",
                         "/student/login"
-                ).order(1);
+                ).order(1);// order(1) 后执行，值越小，执行等级越高
         // token刷新的拦截器
-        registry.addInterceptor(new RefreshTokenInterceptor(stringRedisTemplate)).addPathPatterns("/**").order(0);
+        registry.addInterceptor(new RefreshTokenInterceptor(stringRedisTemplate)).addPathPatterns("/**").order(0);// order(0) 先执行
     }
 }

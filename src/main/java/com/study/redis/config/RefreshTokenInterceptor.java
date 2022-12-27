@@ -31,13 +31,13 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
         }
         // 2.基于TOKEN获取redis中的用户
         String key  = LOGIN_STU_KEY + token;
-        Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries(key);
+        Map<Object, Object> stuMap = stringRedisTemplate.opsForHash().entries(key);
         // 3.判断用户是否存在
-        if (userMap.isEmpty()) {
+        if (stuMap.isEmpty()) {
             return true;
         }
         // 5.将查询到的hash数据转为UserDTO
-        StudentDTO studentDTO = BeanUtil.fillBeanWithMap(userMap, new StudentDTO(), false);
+        StudentDTO studentDTO = BeanUtil.fillBeanWithMap(stuMap, new StudentDTO(), false);
         // 6.存在，保存用户信息到 ThreadLocal
         StudentHolder.saveStudent(studentDTO);
         // 7.刷新token有效期
