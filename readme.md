@@ -28,16 +28,16 @@ Redis是一种键值型的NoSql数据库，这里有两个关键字：
   name: "张三",
   orders: [
     {
-       id: 1,
-       item: {
-	 id: 10, title: "荣耀6", price: 4999
-       }
+      id: 1,
+      item: {
+        id: 10, title: "荣耀6", price: 4999
+      }
     },
     {
-       id: 2,
-       item: {
-	 id: 20, title: "小米11", price: 3999
-       }
+      id: 2,
+      item: {
+        id: 20, title: "小米11", price: 3999
+      }
     }
   ]
 }
@@ -48,7 +48,7 @@ Redis是一种键值型的NoSql数据库，这里有两个关键字：
 传统关系型数据库会基于Sql语句做查询，语法有统一标准。
 而不同的非关系数据库查询语法差异极大，五花八门各种各样：
 ```sql
-# 关系型 SQL 
+# 关系型 SQL
 select * from t_user where id = 1;
 # 非关系型 Redis
 get user:1
@@ -73,13 +73,13 @@ GET http://localhost:9200/users/1
 
 
 + 存储方式
-    - 关系型数据库基于磁盘进行存储，会有大量的磁盘IO，对性能有一定影响
-    - 非关系型数据库，他们的操作更多的是依赖于内存来操作，内存的读写速度会非常快，性能自然会好一些
+  - 关系型数据库基于磁盘进行存储，会有大量的磁盘IO，对性能有一定影响
+  - 非关系型数据库，他们的操作更多的是依赖于内存来操作，内存的读写速度会非常快，性能自然会好一些
 
 + 扩展性
-    - 关系型数据库集群模式一般是主从，主从数据一致，起到数据备份的作用，称为垂直扩展。
-    - 非关系型数据库可以将数据拆分，存储在不同机器上，可以保存海量数据，解决内存大小有限的问题。称为水平扩展。
-    - 关系型数据库因为表之间存在关联关系，如果做水平扩展会给数据查询带来很多麻烦
+  - 关系型数据库集群模式一般是主从，主从数据一致，起到数据备份的作用，称为垂直扩展。
+  - 非关系型数据库可以将数据拆分，存储在不同机器上，可以保存海量数据，解决内存大小有限的问题。称为水平扩展。
+  - 关系型数据库因为表之间存在关联关系，如果做水平扩展会给数据查询带来很多麻烦
 
 ### 1.2.认识redis
 Redis诞生于2009年全称是**Re**mote  **D**ictionary **S**erver 远程词典服务器，是一个基于内存的键值型NoSQL数据库。
@@ -451,9 +451,9 @@ SortedSet的常见命令有：
 - **降序**获取sorted set 中的指定元素的排名：ZREVRANK key memeber
 
 
-### 3.1.Redis客户端
+## 3.1.Redis客户端
 Jedis的官网地址： https://github.com/redis/jedis
-#### 3.1.1.快速入门
+### 3.1.1.快速入门
 1）先引入依赖
 ```xml
 <!--jedis-->
@@ -518,7 +518,7 @@ void tearDown() {
     }
 }
 ```
-#### 3.1.2.连接池
+### 3.1.2.连接池
 Jedis本身是线程不安全的，并且频繁的创建和销毁连接会有性能损耗，因此推荐使用Jedis连接池代替Jedis的直连方式。
 ```java
 package com.heima.jedis.util;
@@ -546,7 +546,7 @@ public class JedisConnectionFactory {
 }
 ```
 
-### 3.2.SpringDataRedis客户端
+## 3.2.SpringDataRedis客户端
 SpringData是Spring中数据操作的模块，包含对各种数据库的集成，其中对Redis的集成模块就叫做SpringDataRedis，官网地址：https://spring.io/projects/spring-data-redis
 
 - 提供了对不同Redis客户端的整合（Lettuce和Jedis）
@@ -568,7 +568,7 @@ SpringDataRedis中提供了RedisTemplate工具类，其中封装了各种对Redi
 | redisTemplate.opsForZSet()     | ZSetOperations |   操作**SortedSet**类型数据     |
 | redisTemplate     |  |   通用命令     |
 
-#### 3.2.1.快速入门
+### 3.2.1.快速入门
 SpringBoot已经提供了对SpringDataRedis的支持，使用非常简单。
 
 
@@ -684,7 +684,7 @@ class RedisStringTests {
     }
 }
 ```
-### 3.2.2.自定义序列化
+## 3.2.2.自定义序列化
 
 RedisTemplate可以接收任意Object作为值写入Redis：
 只不过写入前会把Object序列化为字节形式，默认是采用JDK序列化，得到的结果是这样的：
@@ -731,7 +731,7 @@ public class RedisConfig {
 ```
 整体可读性有了很大提升，并且能将Java对象自动的序列化为JSON字符串，并且查询时能自动把JSON反序列化为Java对象。不过，其中记录了序列化时对应的class名称，目的是为了查询时实现自动反序列化。这会带来额外的内存开销。
 
-#### 3.2.3.StringRedisTemplate
+### 3.2.3.StringRedisTemplate
 为了节省内存空间，我们可以不使用JSON序列化器来处理value，而是统一使用String序列化器，要求只能存储String类型的key和value。当需要存储Java对象时，手动完成对象的序列化和反序列化。
 
 因为存入和读取时的序列化及反序列化都是我们自己实现的，SpringDataRedis就不会将class信息写入Redis了。
@@ -748,18 +748,18 @@ private static final ObjectMapper mapper = new ObjectMapper();
 
 @Test
 void testSaveUser() throws JsonProcessingException {
-    // 创建对象
-    User user = new User("虎哥", 21);
-    // 手动序列化
-    String json = mapper.writeValueAsString(user);
-    // 写入数据
-    stringRedisTemplate.opsForValue().set("user:200", json);
+        // 创建对象
+        User user = new User("虎哥", 21);
+        // 手动序列化
+        String json = mapper.writeValueAsString(user);
+        // 写入数据
+        stringRedisTemplate.opsForValue().set("user:200", json);
 
-    // 获取数据
-    String jsonUser = stringRedisTemplate.opsForValue().get("user:200");
-    // 手动反序列化
-    User user1 = mapper.readValue(jsonUser, User.class);
-    System.out.println("user1 = " + user1);
-}
+        // 获取数据
+        String jsonUser = stringRedisTemplate.opsForValue().get("user:200");
+        // 手动反序列化
+        User user1 = mapper.readValue(jsonUser, User.class);
+        System.out.println("user1 = " + user1);
+        }
 
 ```
