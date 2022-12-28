@@ -1,4 +1,6 @@
-package com.study.redis.pojo;
+package com.study.redis.pojo.list;
+
+import com.study.redis.pojo.Student;
 
 public class StudentList {
     //先初始化一个头结点 头结点不动 不放具体的数据

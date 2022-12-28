@@ -6,7 +6,7 @@ import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import com.study.redis.pojo.dto.LoginFormDTO;
 import com.study.redis.pojo.Student;
-import com.study.redis.pojo.StudentList;
+import com.study.redis.pojo.list.StudentList;
 import com.study.redis.pojo.dto.StudentDTO;
 import com.study.redis.util.RegexUtils;
 import com.study.redis.util.Result;

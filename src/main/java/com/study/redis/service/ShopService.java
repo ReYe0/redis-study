@@ -5,7 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.study.redis.pojo.Shop;
-import com.study.redis.pojo.ShopList;
+import com.study.redis.pojo.list.ShopList;
 import com.study.redis.util.CacheClient;
 import com.study.redis.util.RedisData;
 import com.study.redis.util.Result;

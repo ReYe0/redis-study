@@ -30,28 +30,28 @@ public Result login(LoginFormDTO loginForm, HttpSession session) {
         // 1.校验手机号
         String phone = loginForm.getPhone();
         if (RegexUtils.isPhoneInvalid(phone)) {
-        // 2.如果不符合，返回错误信息
-        return Result.fail("手机号格式错误！");
+            // 2.如果不符合，返回错误信息
+            return Result.fail("手机号格式错误！");
         }
         // 3.校验验证码
         Object cacheCode = session.getAttribute("code");
         String code = loginForm.getCode();
         if(cacheCode == null || !cacheCode.toString().equals(code)){
-        //3.不一致，报错
-        return Result.fail("验证码错误");
+            //3.不一致，报错
+            return Result.fail("验证码错误");
         }
         //一致，根据手机号查询用户
         Student stu = StudentList.findByPhone(phone);
         //5.判断用户是否存在
         if(stu == null){
-        //不存在，则创建
-        stu =  createUserWithPhone(phone);
+            //不存在，则创建
+            stu =  createUserWithPhone(phone);
         }
         //7.保存用户信息到session中
         session.setAttribute("stu", BeanUtil.copyProperties(stu, StudentDTO.class));
 
         return Result.ok();
-        }
+    }
 ```
 ### 1.2.实现登陆拦截功能
 使用threadlocal来做到线程隔离，每个线程操作自己的一份数据。
@@ -152,23 +152,23 @@ public Result login(LoginFormDTO loginForm, HttpSession session) {
         // 1.校验手机号
         String phone = loginForm.getPhone();
         if (RegexUtils.isPhoneInvalid(phone)) {
-        // 2.如果不符合，返回错误信息
-        return Result.fail("手机号格式错误！");
+            // 2.如果不符合，返回错误信息
+            return Result.fail("手机号格式错误！");
         }
         // 3.校验验证码,TODO 之后从redis中获取
 //        Object cacheCode = session.getAttribute("code");
         String cacheCode = stringRedisTemplate.opsForValue().get(LOGIN_CODE_KEY + phone);
         String code = loginForm.getCode();
         if(cacheCode == null || !cacheCode.toString().equals(code)){
-        //3.不一致，报错
-        return Result.fail("验证码错误");
+            //3.不一致，报错
+            return Result.fail("验证码错误");
         }
         //一致，根据手机号查询用户
         Student stu = StudentList.findByPhone(phone);
         //5.判断用户是否存在
         if(stu == null){
-        //不存在，则创建
-        stu =  createUserWithPhone(phone);
+            //不存在，则创建
+            stu =  createUserWithPhone(phone);
         }
         //7.保存用户信息到session中，TODO 之后用redis代替
 //        session.setAttribute("stu", BeanUtil.copyProperties(stu, StudentDTO.class));
@@ -177,9 +177,9 @@ public Result login(LoginFormDTO loginForm, HttpSession session) {
         //TODO 7.2.将User对象转为HashMap存储
         StudentDTO stuDTO = BeanUtil.copyProperties(stu, StudentDTO.class);
         Map<String, Object> stuMap = BeanUtil.beanToMap(stuDTO, new HashMap<>(),
-        CopyOptions.create() // 数据拷贝是的选项
-        .setIgnoreNullValue(true) //忽略空的值
-        .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));//修改字段，将long的id转为String
+                CopyOptions.create() // 数据拷贝是的选项
+                        .setIgnoreNullValue(true) //忽略空的值
+                        .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));//修改字段，将long的id转为String
         //TODO 7.3.存储
         String tokenKey = LOGIN_STU_KEY + token;
         stringRedisTemplate.opsForHash().putAll(tokenKey, stuMap);
@@ -187,7 +187,7 @@ public Result login(LoginFormDTO loginForm, HttpSession session) {
         stringRedisTemplate.expire(tokenKey, LOGIN_STU_TTL, TimeUnit.MINUTES);
 //        return Result.ok();
         return Result.ok(token);//TODO 返回token
-        }
+    }
 ```
 ### 1.7.修改优化拦截器
 目前位置，上述代码只能在登陆的时候刷新token，其他访问路径不刷新token，因此修改拦截器：
@@ -198,18 +198,18 @@ public Result login(LoginFormDTO loginForm, HttpSession session) {
 1）所有路劲刷新token
 ```java
     @Override
-public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         // 1.获取请求头中的token
         String token = request.getHeader("authorization");
         if (StrUtil.isBlank(token)) {
-        return true;
+            return true;
         }
         // 2.基于TOKEN获取redis中的用户
         String key  = LOGIN_STU_KEY + token;
         Map<Object, Object> stuMap = stringRedisTemplate.opsForHash().entries(key);
         // 3.判断用户是否存在
         if (stuMap.isEmpty()) {
-        return true;
+            return true;
         }
         // 5.将查询到的hash数据转为UserDTO
         StudentDTO studentDTO = BeanUtil.fillBeanWithMap(stuMap, new StudentDTO(), false);
@@ -219,28 +219,28 @@ public boolean preHandle(HttpServletRequest request, HttpServletResponse respons
         stringRedisTemplate.expire(key, LOGIN_STU_TTL, TimeUnit.MINUTES);
         // 8.放行
         return true;
-        }
+    }
 
-@Override
-public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         // 移除用户
         StudentHolder.removeStudent();
-        }
+    }
 ```
 2）判断用户是否存在，且拦截路径访问
 ```java
     @Override
-public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         // 1.判断是否需要拦截（ThreadLocal中是否有用户）
         if (StudentHolder.getStudent() == null) {
-        // 没有，需要拦截，设置状态码
-        response.setStatus(401);
-        // 拦截
-        return false;
+            // 没有，需要拦截，设置状态码
+            response.setStatus(401);
+            // 拦截
+            return false;
         }
         // 有用户，则放行
         return true;
-        }
+    }
 ```
 3）配置拦截器生效
 ```java
@@ -345,7 +345,7 @@ public Result queryShopById(@PathVariable("id") Long id) {
 - 低一致性需求：使用内存淘汰机制。eg：店铺类型的存缓查询
 - 高一致性需求：主动更新，并以超时剔除作为兜底方案。eg：店铺详情查询的缓存
 
-#### 2.3.1.数据库缓存不一致方案：
+#### 2.3.1.数据库缓存不一致方案：（主动更新）
 由于我们的**缓存的数据源来自于数据库**,而数据库的**数据是会发生变化的**,因此,如果当数据库中**数据发生变化,而缓存却没有同步**,此时就会有**一致性问题存在**,其后果是:
 用户使用缓存中的过时数据,就会产生类似多线程数据安全问题,从而影响业务,产品口碑等;怎么解决呢？有如下几种方案
 
@@ -355,7 +355,7 @@ public Result queryShopById(@PathVariable("id") Long id) {
 
 >* Write Behind Caching Pattern ：调用者只操作缓存，其他线程去异步处理数据库，实现最终一致
 
-#### 2.3.2.数据库和缓存不一致采用什么方案
+#### 2.3.2.数据库和缓存不一致采用什么方案（主动更新之Cache Aside Pattern ）
 综合考虑使用方案一，但是方案一调用者如何处理呢？这里有几个问题
 
 操作缓存和数据库时有三个问题需要考虑：
@@ -929,3 +929,297 @@ public class CacheClient {
         }
         return Result.ok(shop);
 ```
+
+## 3.优惠券秒杀
+### 3.1.全局唯一ID
+每个店铺都可以发布优惠券：
+
+当用户抢购时，就会生成订单并保存到订单表中，而订单表如果使用数据库自增ID就存在一些问题：
+
+* id的规律性太明显
+* 受单表数据量的限制
+
+场景分析：如果我们的id具有太明显的规则，用户或者说商业对手很容易猜测出来我们的一些敏感信息，比如商城在一天时间内，卖出了多少单，这明显不合适。
+
+场景分析二：随着我们商城规模越来越大，mysql的单表的容量不宜超过500W，数据量过大之后，我们要进行拆库拆表，但拆分表了之后，他们从逻辑上讲他们是同一张表，所以他们的id是不能一样的， 于是乎我们需要保证id的唯一性。
+
+**全局ID生成器**，是一种在分布式系统下用来生成全局唯一ID的工具，一般要满足下列特性：
+>* 唯一性
+>* 高可用
+>* 高性能
+>* 递增性
+>* 安全性
+
+为了增加ID的安全性，我们可以不直接使用Redis自增的数值，而是拼接一些其它信息：
+`符号位（0）+时间戳（32bit）+ 序列号（32bit）`
+
+ID的组成部分：
+
+* 符号位：1bit，永远为零
+* 时间戳：31bit，以秒为单位，可以使用69年
+* 序列号：32bit，秒内的计数器，支持每秒产生2^32个不同ID
+
+### 3.2.Redis实现全局唯一Id
+
+```java
+@Component
+public class RedisIdWorker {
+    /**
+     * 开始时间戳
+     */
+    private static final long BEGIN_TIMESTAMP = 1640995200L;
+    /**
+     * 序列号的位数
+     */
+    private static final int COUNT_BITS = 32;
+
+    private StringRedisTemplate stringRedisTemplate;
+
+    public RedisIdWorker(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
+    }
+
+    public long nextId(String keyPrefix) {
+        // 1.生成时间戳
+        LocalDateTime now = LocalDateTime.now();
+        long nowSecond = now.toEpochSecond(ZoneOffset.UTC);
+        long timestamp = nowSecond - BEGIN_TIMESTAMP;
+
+        // 2.生成序列号
+        // 2.1.获取当前日期，精确到天
+        String date = now.format(DateTimeFormatter.ofPattern("yyyy:MM:dd"));
+        // 2.2.自增长
+        long count = stringRedisTemplate.opsForValue().increment("icr:" + keyPrefix + ":" + date);
+
+        // 3.拼接并返回
+        return timestamp << COUNT_BITS | count;//时间戳左移32位。或运算填充序列号
+    }
+}
+```
+测试类：
+```java
+ @Test
+    public void testRedisIdWorker() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(300);
+        Runnable task = ()->{
+            for (int i = 0; i < 100; i++) {
+                System.out.println("id:"+redisIdWorker.nextId("order"));
+            }
+            latch.countDown();
+        };
+        long begin = System.currentTimeMillis();
+        for (int i = 0; i < 300; i++) {
+            es.submit(task);//线程池是异步的，得借助CountDownLatch
+        }
+        latch.await();//等待所有countdown结束
+        long end = System.currentTimeMillis();
+        System.out.println("time:"+(end - begin));
+    }
+```
+知识小贴士：关于countdownlatch
+
+countdownlatch名为信号枪：主要的作用是同步协调在多线程的等待于唤醒问题
+
+我们如果没有CountDownLatch ，那么由于程序是异步的，当异步程序没有执行完时，主线程就已经执行完了，然后我们期望的是分线程全部走完之后，主线程再走，所以我们此时需要使用到CountDownLatch
+
+CountDownLatch 中有两个最重要的方法
+
+1、countDown
+
+2、await
+
+await 方法 是阻塞方法，我们担心分线程没有执行完时，main线程就先执行，所以使用await可以让main线程阻塞，那么什么时候main线程不再阻塞呢？当CountDownLatch  内部维护的 变量变为0时，就不再阻塞，直接放行，那么什么时候CountDownLatch   维护的变量变为0 呢，我们只需要调用一次countDown ，内部变量就减少1，我们让分线程和变量绑定， 执行完一个分线程就减少一个变量，当分线程全部走完，CountDownLatch 维护的变量就是0，此时await就不再阻塞，统计出来的时间也就是所有分线程执行完后的时间。
+
+
+### 3.3.添加优惠券
+每个店铺都可以发布优惠券，分为平价券和特价券。平价券可以任意购买，而特价券需要秒杀抢购：
+平价优惠券表：优惠券的基本信息，优惠金额、使用规则等。
+特价优惠券表：优惠券的库存、开始抢购时间，结束抢购时间。特价优惠券才需要填写这些信息
+
+平价卷由于优惠力度并不是很大，所以是可以任意领取
+
+而代金券由于优惠力度大，所以像第二种卷，就得限制数量，从表结构上也能看出，特价卷除了具有优惠卷的基本信息以外，还具有库存，抢购时间，结束时间等等字段
+**新增普通卷代码：  **
+**VoucherController**
+```java
+ @PostMapping
+    public Result addVoucher(@RequestBody Voucher voucher) {
+        VoucherList.add(voucher);
+        return Result.ok(voucher.getId());
+    }
+```
+
+**新增秒杀卷代码：**
+
+**VoucherController**
+```java
+@PostMapping("seckill")
+    public Result addSeckillVoucher(@RequestBody Voucher voucher) {
+        voucherService.addSeckillVoucher(voucher);
+        return Result.ok(voucher.getId());
+    }
+```
+
+**VoucherService**
+```java
+    //@Transactional
+    public void addSeckillVoucher(Voucher voucher) {
+        // 保存优惠券
+        VoucherList.add(voucher);
+        // 保存秒杀信息
+        SeckillVoucher seckillVoucher = new SeckillVoucher();
+        seckillVoucher.setVoucherId(voucher.getId());
+        seckillVoucher.setStock(voucher.getStock());
+        seckillVoucher.setBeginTime(voucher.getBeginTime());
+        seckillVoucher.setEndTime(voucher.getEndTime());
+        SeckillVoucherList.add(seckillVoucher);
+        // 保存秒杀库存到Redis中
+        stringRedisTemplate.opsForValue().set(SECKILL_STOCK_KEY + voucher.getId(), voucher.getStock().toString());
+    }
+```
+
+### 3.4.实现秒杀下单(基础逻辑）
+
+秒杀下单应该思考的内容：
+
+下单时需要判断两点：
+
+* 秒杀是否开始或结束，如果尚未开始或已经结束则无法下单
+* 库存是否充足，不足则无法下单
+
+下单核心逻辑分析：
+
+当用户开始进行下单，我们应当去查询优惠卷信息，查询到优惠卷信息，判断是否满足秒杀条件
+
+比如时间是否充足，如果时间充足，则进一步判断库存是否足够，如果两者都满足，则扣减库存，创建订单，然后返回订单id，如果有一个条件不满足则直接结束。
+
+VoucherOrderService
+
+```java
+ public Result seckillVoucher(Long voucherId) {
+        // 1.查询优惠券
+        SeckillVoucher voucher = SeckillVoucherList.findById(voucherId);
+        // 2.判断秒杀是否开始
+        if (voucher.getBeginTime().isAfter(LocalDateTime.now())) {
+            // 尚未开始
+            return Result.fail("秒杀尚未开始！");
+        }
+        // 3.判断秒杀是否已经结束
+        if (voucher.getEndTime().isBefore(LocalDateTime.now())) {
+            // 尚未开始
+            return Result.fail("秒杀已经结束！");
+        }
+        // 4.判断库存是否充足
+        if (voucher.getStock() < 1) {
+            // 库存不足
+            return Result.fail("库存不足！");
+        }
+        //5，扣减库存
+        voucher.setStock(voucher.getStock()-1);
+        Boolean success = SeckillVoucherList.updateById(voucher);
+        if (!success) {
+            //扣减库存
+            return Result.fail("库存不足！");
+        }
+        //6.创建订单
+        VoucherOrder voucherOrder = new VoucherOrder();
+        // 6.1.订单id
+        long orderId = redisIdWorker.nextId("order");
+        voucherOrder.setId(orderId);
+        // 6.2.用户id
+        Long stuId = StudentHolder.getStudent().getId();
+        voucherOrder.setUserId(stuId);
+        // 6.3.代金券id
+        voucherOrder.setVoucherId(voucherId);
+//        save(voucherOrder);
+//        创建优惠券订单
+        return Result.ok(orderId);
+
+    }
+```
+### 3.5.库存超卖问题分析
+有关超卖问题分析：在我们原有代码中是这么写的
+```java
+ // 4.判断库存是否充足
+        if (voucher.getStock() < 1) {
+            // 库存不足
+            return Result.fail("库存不足！");
+        }
+        //5，扣减库存
+        voucher.setStock(voucher.getStock()-1);
+        Boolean success = SeckillVoucherList.updateById(voucher);
+        if (!success) {
+            //扣减库存
+            return Result.fail("库存不足！");
+        }
+```
+假设线程1过来查询库存，判断出来库存大于1，正准备去扣减库存，但是还没有来得及去扣减，此时线程2过来，线程2也去查询库存，发现这个数量一定也大于1，那么这两个线程都会去扣减库存，最终多个线程相当于一起去扣减库存，此时就会出现库存的超卖问题。
+
+超卖问题是典型的多线程安全问题，针对这一问题的常见解决方案就是加锁：而对于加锁，我们通常有两种解决方案：
+
+**悲观锁：**
+
+悲观锁可以实现对于数据的串行化执行，比如syn，和lock都是悲观锁的代表，同时，悲观锁中又可以再细分为公平锁，非公平锁，可重入锁，等等
+
+**乐观锁：**
+
+乐观锁：会有一个版本号，每次操作数据会对版本号+1，再提交回数据时，会去校验是否比之前的版本大1 ，如果大1 ，则进行操作成功，这套机制的核心逻辑在于，如果在操作过程中，版本号只比原来大1 ，那么就意味着操作过程中没有人对他进行过修改，他的操作就是安全的，如果不大1，则数据被修改过，当然乐观锁还有一些变种的处理方式比如cas
+
+乐观锁的典型代表：就是cas，利用cas进行无锁化机制加锁，var5 是操作前读取的内存值，while中的var1+var2 是预估值，如果预估值 == 内存值，则代表中间没有被人修改过，此时就将新值去替换 内存值
+
+其中do while 是为了在操作失败时，再次进行自旋操作，即把之前的逻辑再操作一次。
+
+```java
+int var5;
+do {
+    var5 = this.getIntVolatile(var1, var2);
+} while(!this.compareAndSwapInt(var1, var2, var5, var5 + var4));
+
+return var5;
+```
+
+**课程中的使用方式：**
+
+课程中的使用方式是没有像cas一样带自旋的操作，也没有对version的版本号+1 ，他的操作逻辑是在操作时，对版本号进行+1 操作，然后要求version 如果是1 的情况下，才能操作，那么第一个线程在操作后，数据库中的version变成了2，但是他自己满足version=1 ，所以没有问题，此时线程2执行，线程2 最后也需要加上条件version =1 ，但是现在由于线程1已经操作过了，所以线程2，操作时就不满足version=1 的条件了，所以线程2无法执行成功
+
+
+### 3.6.乐观锁解决超卖问题
+**修改代码方案一、**
+
+VoucherOrderService 在扣减库存时，改为下面SQL语句的意思：
+
+```sql
+update table set stock = stock -1 where id = ？ and stock = ?
+```
+
+核心含义是：只要我扣减库存时的库存和之前我查询到的库存是一样的，就意味着没有人在中间修改过库存，那么此时就是安全的，但是以上这种方式通过测试发现会有很多失败的情况，失败的原因在于：在使用乐观锁过程中假设100个线程同时都拿到了100的库存，然后大家一起去进行扣减，但是100个人中只有1个人能扣减成功，其他的人在处理时，他们在扣减时，库存已经被修改过了，所以此时其他线程都会失败
+
+**修改代码方案二、**
+
+之前的方式要修改前后都保持一致，但是这样我们分析过，成功的概率太低，所以我们的乐观锁需要变一下，改成下面SQL语句的意思
+
+```sql
+update table set stock = stock -1 where id = ？ and stock > 0
+```
+
+**知识小扩展：**（暂时看不懂）
+针对cas中的自旋压力过大，我们可以使用Longaddr这个类去解决
+
+Java8 提供的一个对AtomicLong改进后的一个类，LongAdder
+
+大量线程并发更新一个原子性的时候，天然的问题就是自旋，会导致并发性问题，当然这也比我们直接使用syn来的好
+
+所以利用这么一个类，LongAdder来进行优化
+
+如果获取某个值，则会对cell和base的值进行递增，最后返回一个完整的值
+
+
+### 3.7.优惠券秒杀-一人一单
+需求：修改秒杀业务，要求同一个优惠券，一个用户只能下一单
+
+**现在的问题在于：**
+
+优惠卷是为了引流，但是目前的情况是，一个人可以无限制的抢这个优惠卷，所以我们应当增加一层逻辑，让一个用户只能下一个单，而不是让一个用户下多个单
+
+具体操作逻辑如下：比如时间是否充足，如果时间充足，则进一步判断库存是否足够，然后再根据优惠卷id和用户id查询是否已经下过这个订单，如果下过这个订单，则不再下单，否则进行下单
+
