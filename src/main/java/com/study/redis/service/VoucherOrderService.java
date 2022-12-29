@@ -8,6 +8,7 @@ import com.study.redis.util.RedisIdWorker;
 import com.study.redis.util.Result;
 import com.study.redis.util.StudentHolder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +21,7 @@ public class VoucherOrderService {
     @Resource
     private RedisIdWorker redisIdWorker;
 
-//    @Transactional
+    @Transactional
     public Result seckillVoucher(Long voucherId) {
         // 1.查询优惠券
         SeckillVoucher voucher = SeckillVoucherList.findById(voucherId);
@@ -40,36 +41,47 @@ public class VoucherOrderService {
             return Result.fail("库存不足！");
         }
         Long stuId = StudentHolder.getStudent().getId();
-        // TODO 判断用户是否获取过优惠券
-        VoucherOrder order = VoucherOrderList.findById(voucherId, stuId);
-        if (order != null){
-            // 用户已经购买过了
-            return Result.fail("用户已经购买过一次！");
+        synchronized (stuId.toString().intern()) {
+            //获取代理对象(事务)
+            VoucherOrderService proxy = (VoucherOrderService) AopContext.currentProxy();
+            return proxy.createVoucherOrder(voucherId);
         }
-        //5，扣减库存
-        if(voucher.getStock() > 0){
-            voucher.setStock(voucher.getStock()-1);
-            Boolean success = SeckillVoucherList.updateById(voucher);
-            if (!success) {
-                //扣减库存
-                return Result.fail("库存不足！");
+    }
+
+    @Transactional
+    public  Result createVoucherOrder(Long voucherId) {
+        Long stuId = StudentHolder.getStudent().getId();
+        synchronized (stuId.toString().intern()){
+            // 5.1.查询订单
+            VoucherOrder order = VoucherOrderList.findById(voucherId, stuId);
+            // 5.2.判断是否存在
+            if (order != null ) {
+                // 用户已经购买过了
+                return Result.fail("用户已经购买过一次！");
             }
+            // 6.扣减库存
+            SeckillVoucher voucher = SeckillVoucherList.findById(voucherId);
+            if(voucher.getStock() > 0){
+                voucher.setStock(voucher.getStock()-1);
+                Boolean success = SeckillVoucherList.updateById(voucher);
+                if (!success) {
+                    // 扣减失败
+                    return Result.fail("库存不足！");
+                }
+            }
+            // 7.创建订单
+            VoucherOrder voucherOrder = new VoucherOrder();
+            // 7.1.订单id
+            long orderId = redisIdWorker.nextId("order");
+            voucherOrder.setId(orderId);
+            // 7.2.用户id
+            voucherOrder.setUserId(stuId);
+            // 7.3.代金券id
+            voucherOrder.setVoucherId(voucherId);
+            VoucherOrderList.add(voucherOrder);
+            // 7.返回订单id
+            return Result.ok(orderId);
         }
-        //6.创建订单
-        VoucherOrder voucherOrder = new VoucherOrder();
-        // 6.1.订单id
-        long orderId = redisIdWorker.nextId("order");
-        voucherOrder.setId(orderId);
-        // 6.2.用户id
-//        Long stuId = StudentHolder.getStudent().getId();
-        voucherOrder.setUserId(stuId);
-        // 6.3.代金券id
-        voucherOrder.setVoucherId(voucherId);
-//        创建优惠券订单
-//        save(voucherOrder);
-        VoucherOrderList.add(voucherOrder);
-        System.out.println(SeckillVoucherList.findById(voucherId));//剩下的订单
-        return Result.ok(orderId);
 
     }
 }
